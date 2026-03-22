@@ -26,3 +26,7 @@ Thumbs.db
 
 # Environment
 .env
+
+#Content
+Add-Content .gitignore "`nData/processed/features.parquet"
+Add-Content .gitignore "`nModels/xgboost_price_forecaster.json"
