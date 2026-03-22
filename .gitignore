@@ -8,6 +8,8 @@ __pycache__/
 
 # Raw data
 Data/raw/
+Data/processed/master.parquet
+Data/processed/master_clean.parquet
 
 # Notebooks
 Notebooks/
