@@ -19,7 +19,6 @@ Outputs/
 
 # Node modules
 frontend/node_modules/
-frontend/build/
 
 # OS
 .DS_Store

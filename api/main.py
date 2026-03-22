@@ -39,6 +39,8 @@ import redis
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from xgboost import XGBRegressor
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from api.features import (
     build_live_features,
@@ -348,3 +350,19 @@ async def predict_historical(request: HistoricalRequest) -> PredictionResponse:
         prediction, forecast_dt.isoformat(),
     )
     return PredictionResponse(**result)
+
+FRONTEND_BUILD = Path("frontend/build")
+ 
+if FRONTEND_BUILD.exists():
+    # Serve static assets (JS, CSS, images)
+    app.mount(
+        "/static",
+        StaticFiles(directory=str(FRONTEND_BUILD / "static")),
+        name="static",
+    )
+ 
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def serve_react(full_path: str):
+        """Serve React app for all non-API routes."""
+        index = FRONTEND_BUILD / "index.html"
+        return FileResponse(str(index))

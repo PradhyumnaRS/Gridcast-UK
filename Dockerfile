@@ -1,7 +1,6 @@
-# Dockerfile — UK Electricity Price Forecasting API
-#
-# Build:  docker build -t uk-electricity-api .
-# Run:    docker-compose up
+# Dockerfile — HuggingFace Spaces deployment
+# Serves FastAPI (port 7860) + React static files from a single container
+# Redis is not available on HuggingFace free tier — caching is gracefully disabled
 
 FROM python:3.11-slim
 
@@ -13,17 +12,22 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy and install Python dependencies first (layer caching)
+# Copy and install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
+# Copy API code
 COPY api/ ./api/
+
+# Copy model and features
 COPY Models/ ./Models/
 COPY Data/processed/features.parquet ./Data/processed/features.parquet
 
-# Expose port
-EXPOSE 8000
+# Copy React production build as static files
+COPY frontend/build/ ./frontend/build/
 
-# Run uvicorn
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Expose HuggingFace Spaces port
+EXPOSE 7860
+
+# Run uvicorn on port 7860
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "7860"]
