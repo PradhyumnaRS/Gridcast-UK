@@ -1,0 +1,11 @@
+fastapi==0.135.1
+uvicorn[standard]==0.42.0
+pydantic==2.12.5
+xgboost==3.2.0
+pandas==3.0.1
+pyarrow==23.0.1
+numpy==2.4.3
+redis==7.3.0
+requests==2.32.5
+scikit-learn==1.8.0
+starlette==0.52.1

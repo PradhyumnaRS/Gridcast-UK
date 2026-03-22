@@ -1,0 +1,53 @@
+# docker-compose.yml — UK Electricity Price Forecasting Engine
+#
+# Services:
+#   api   — FastAPI inference server (port 8000)
+#   redis — Redis cache for predictions (port 6379)
+#
+# Usage:
+#   docker-compose up --build       # first run
+#   docker-compose up               # subsequent runs
+#   docker-compose down             # stop and remove containers
+#   docker-compose logs -f api      # stream API logs
+
+version: "3.9"
+
+services:
+
+  redis:
+    image: redis:7-alpine
+    container_name: uk_electricity_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  api:
+    build: .
+    container_name: uk_electricity_api
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL_PATH=Models/xgboost_price_forecaster.json
+      - FEATURES_PATH=Data/processed/features.parquet
+      - REDIS_URL=redis://redis:6379
+      - TZ=UTC
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  redis_data:

@@ -1,0 +1,40 @@
+# .dockerignore — exclude files from Docker build context
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+UKE/
+venv/
+.venv/
+env/
+
+# Raw data — only processed parquet is needed at runtime
+Data/raw/
+
+# Training outputs not needed at runtime
+Outputs/
+
+# Development files
+.git/
+.gitignore
+*.md
+*.ipynb
+.env
+
+# Test files
+tests/
+pytest.ini
+.pytest_cache/
+
+# OS
+.DS_Store
+Thumbs.db

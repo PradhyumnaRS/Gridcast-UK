@@ -1,0 +1,27 @@
+# Virtual environment
+UKE/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Raw data
+Data/raw/
+
+# Notebooks
+Notebooks/
+
+# Training outputs
+Outputs/
+
+# Node modules
+frontend/node_modules/
+frontend/build/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
