@@ -9,7 +9,7 @@
 
 ## Overview
 
-Gridcast UK is an end-to-end MLOps project that forecasts the next UK electricity settlement period price (T+30 min) using real-time data from three live APIs. Built as a portfolio project targeting AI/ML Engineer graduate roles.
+Gridcast UK is an end-to-end MLOps project that forecasts the next UK electricity settlement period price (T+30 min) using real-time data from three live APIs.
 
 **Key results on held-out test set (Sep–Dec 2025):**
 
@@ -197,8 +197,7 @@ Open `http://localhost:3000`
 
 ## Author
 
-**Pradhyumna R S**
-MSc AI — University of Southampton
+**Pradhyumna R Shetty**
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue)](https://linkedin.com/in/YOUR_LINKEDIN)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue)](https://linkedin.com/in/pradhyumna-r-shetty)
 [![HuggingFace](https://img.shields.io/badge/HuggingFace-Pradh2430-yellow)](https://huggingface.co/Pradh2430)
