@@ -247,21 +247,39 @@ def build_live_features(
         [int(current_ts.hour * 2 + current_ts.minute // 30 + 1)], dtype="int8"
     )
 
-    # ── 4. Concatenate with lookback for non-price feature computation ────
-    shared_cols = [c for c in lookback.columns if c in live_df.columns and c != TARGET]
-    live_only_cols = [c for c in live_df.columns if c not in lookback.columns and c != TARGET]
-    combined = pd.concat([lookback[shared_cols], live_df[shared_cols + live_only_cols]], axis=0)
-    combined = combined.sort_index()
-
-    # ── 5. Inject real recent prices into combined for lag computation ─────
-    # Replace the price_mid_gbp_mwh column with real Elexon prices where available
-    if recent_prices is not None and len(recent_prices) >= 10:
-        # Reindex recent prices onto combined's index, forward-fill gaps
-        combined["price_mid_gbp_mwh"] = recent_prices.reindex(
-            combined.index, method="ffill"
+    # ── 4. Build combined DataFrame ───────────────────────────────────────
+    # Use recent_prices as a standalone price lookback if available.
+    # This avoids the 73-day gap between parquet (ends Dec 2025) and
+    # live data (starts Mar 2026) which causes rolling features to be 0.
+    if recent_prices is not None and len(recent_prices) >= 48:
+        # Build a price-only DataFrame from real recent Elexon prices
+        price_df = pd.DataFrame(
+            {"price_mid_gbp_mwh": recent_prices},
+            index=recent_prices.index
         )
-        # For the current live row, use the last known price
-        combined.loc[current_ts, "price_mid_gbp_mwh"] = last_known_price
+        # Add the live row's non-price features to the last row
+        shared_cols = [c for c in lookback.columns if c in live_df.columns and c != TARGET]
+        live_only_cols = [c for c in live_df.columns if c not in lookback.columns and c != TARGET]
+        # Concatenate recent price history with live row
+        combined = pd.concat([price_df, live_df[shared_cols + live_only_cols]], axis=0)
+        combined = combined.sort_index()
+        # Fill non-price features forward from the live row for the lookback rows
+        for col in shared_cols + live_only_cols:
+            if col not in combined.columns:
+                continue
+            if col == "price_mid_gbp_mwh":
+                continue
+            # Fill NaN lookback rows with parquet's last known value
+            if col in lookback.columns:
+                combined[col] = combined[col].fillna(float(lookback[col].iloc[-1]))
+    else:
+        shared_cols = [c for c in lookback.columns if c in live_df.columns and c != TARGET]
+        live_only_cols = [c for c in live_df.columns if c not in lookback.columns and c != TARGET]
+        combined = pd.concat([lookback[shared_cols], live_df[shared_cols + live_only_cols]], axis=0)
+        combined = combined.sort_index()
+
+    # ── 5. Set current live row price ─────────────────────────────────────
+    combined.loc[current_ts, "price_mid_gbp_mwh"] = last_known_price
 
     # ── 6. Winsorise price column for lag features ────────────────────────
     combined["price_winsorised"] = _winsorise_series(

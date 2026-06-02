@@ -13,7 +13,8 @@ Usage
     python train_model.py --features Data/processed/features.parquet \\
                           --model-out Models/xgboost_price_forecaster.json \\
                           --output-dir Outputs \\
-                          --split-date 2025-09-01 \\
+                          --start-date 2023-01-01 \\
+                          --split-date 2026-01-01 \\
                           --cv-splits 5 \\
                           --n-trials 100 \\
                           --log-level DEBUG
@@ -637,9 +638,19 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Directory for plots and metrics JSON.",
     )
     parser.add_argument(
+        "--start-date",
+        type=str,
+        default=None,
+        help=(
+            "ISO-8601 date string to filter training data start. "
+            "Use for rolling window retraining, e.g. '2023-01-01'. "
+            "If not set, all available data is used."
+        ),
+    )
+    parser.add_argument(
         "--split-date",
         type=str,
-        default="2025-09-01",
+        default="2026-01-01",
         help="ISO-8601 date string for chronological train/test boundary.",
     )
     parser.add_argument(
@@ -703,7 +714,17 @@ def main(argv: list[str] | None = None) -> None:
     # ── 1. Load data ──────────────────────────────────────────────────────
     df = load_features(args.features)
 
-    # ── 2. Train / test split ─────────────────────────────────────────────
+    # ── 2. Rolling window filter (optional) ──────────────────────────────
+    if args.start_date:
+        start_boundary = pd.Timestamp(args.start_date, tz="UTC")
+        before = len(df)
+        df = df[df.index >= start_boundary]
+        logger.info(
+            "Rolling window applied: dropped %d rows before %s. Remaining: %d rows.",
+            before - len(df), args.start_date, len(df)
+        )
+
+    # ── 3. Train / test split ─────────────────────────────────────────────
     train_df, test_df = chronological_split(df, args.split_date)
 
     X_train, y_train = get_X_y(train_df)
@@ -712,7 +733,7 @@ def main(argv: list[str] | None = None) -> None:
     feature_names: list[str] = X_train.columns.tolist()
     logger.info("Features used: %d", len(feature_names))
 
-    # ── 3. Hyperparameter tuning ──────────────────────────────────────────
+    # ── 4. Hyperparameter tuning ──────────────────────────────────────────
     if args.skip_tuning:
         logger.info("Skipping Optuna tuning; using default hyperparameters.")
         best_params: dict[str, Any] = _DEFAULT_PARAMS
@@ -721,22 +742,24 @@ def main(argv: list[str] | None = None) -> None:
             X_train, y_train, n_splits=args.cv_splits, n_trials=args.n_trials
         )
 
-    # ── 4. Final model training ───────────────────────────────────────────
+    # ── 5. Final model training ───────────────────────────────────────────
     model = train_final_model(X_train, y_train, best_params)
 
-    # ── 5. Evaluation ─────────────────────────────────────────────────────
+    # ── 6. Evaluation ─────────────────────────────────────────────────────
     metrics = evaluate(model, X_test, y_test)
 
     # Attach training metadata
+    metrics["start_date"] = args.start_date
     metrics["split_date"] = args.split_date
     metrics["n_train_samples"] = len(X_train)
+    metrics["n_test_samples"] = len(X_test)
     metrics["n_features"] = len(feature_names)
     metrics["best_params"] = best_params
     metrics["skip_tuning"] = args.skip_tuning
     metrics["cv_splits"] = args.cv_splits
     metrics["n_optuna_trials"] = 0 if args.skip_tuning else args.n_trials
 
-    # ── 6. Persist artefacts ──────────────────────────────────────────────
+    # ── 7. Persist artefacts ──────────────────────────────────────────────
     _ensure_dir(args.output_dir)
 
     save_model(model, args.model_out)
