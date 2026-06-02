@@ -1,3 +1,13 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:17786953af4c1b87431238359d5c3edae9faefcf98e24dae7bbb9d3003424cb9
-size 369
+{
+  "files": {
+    "main.css": "/static/css/main.4be2ef29.css",
+    "main.js": "/static/js/main.bcf756cd.js",
+    "index.html": "/index.html",
+    "main.4be2ef29.css.map": "/static/css/main.4be2ef29.css.map",
+    "main.bcf756cd.js.map": "/static/js/main.bcf756cd.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.4be2ef29.css",
+    "static/js/main.bcf756cd.js"
+  ]
+}
